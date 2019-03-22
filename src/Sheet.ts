@@ -1,18 +1,20 @@
-import { IJSSRule, JSSRule } from './Rule';
+import { IJSSRule, JSSRule, JSSStyle } from './Rule';
 import { createSelectorText } from './tool';
-
 export interface IJSSSheet {
   rules: IJSSRule[];
   update(): void;
   attach(parent: HTMLElement, data?: any): void;
 }
+export class Sheet implements IJSSSheet {
+  public rules: IJSSRule[];
+  private classes: object;
+  constructor(style: JSSStyle, data: any = null) {
+    this.rules = [];
+    this.classes = {};
+    this.translateStyle(style, data, '');
+  }
 
-export class JSSSheet implements IJSSSheet {
-  public rules: IJSSRule[] = [];
-  constructor() { }
-
-  // TODO:update
-  public update() { }
+  public update() {}
 
   public attach(parent: HTMLElement, data?: any) {
     let style = document.createElement('style');
@@ -23,7 +25,7 @@ export class JSSSheet implements IJSSSheet {
 
   private createStyleText(data?: any): string {
     return this.rules.reduce((text, rule) => {
-      return text + rule.translate(data);
+      return text + rule.inflate(data);
     }, ',');
   }
 
@@ -36,26 +38,15 @@ export class JSSSheet implements IJSSSheet {
     }
   }
 
-  static from(data: object, parent: string) {
-    // const data = {
-    //   container: (data: any) => {
-    //     return {
-    //       color: data.color,
-    //       inherit: {
-    //         '& content': {
-
-    //         }
-    //       }
-    //     };
-    //   },
-    //   foot: {
-    //     color: 'red'
-    //   }
-    // }
-    const sheet = new JSSSheet()
-    Object.keys(data).forEach(key => {
-      // data[key]
-      sheet.rules.push(new JSSRule(createSelectorText(key)))
-    })
+  private translateStyle(style: JSSStyle, data: any, parentSelector: string) {
+    Object.keys(style).forEach(key => {
+      const className = createSelectorText(key, parentSelector);
+      // this.classes[key] =
+      const rule = new JSSRule(className, style[key]);
+      this.rules.push(rule);
+      rule.inflate(data, (innerStyle: JSSStyle) => {
+        this.translateStyle(innerStyle, data, rule.selectorText);
+      }); // 规则数据填充
+    });
   }
 }
