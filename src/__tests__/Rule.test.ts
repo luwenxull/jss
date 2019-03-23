@@ -2,10 +2,11 @@ import { JSSRule } from '../Rule'
 test('inflate', () => {
   const rule = new JSSRule('.a', {
     color: 'red',
+    backgroundColor: 'blue'
   })
   rule.inflate(null)
   expect(rule.selectorText).toBe('.a')
-  expect(rule.ruleText).toBe('.a{color:red}')
+  expect(rule.ruleText).toBe('.a{color:red;background-color:blue;}')
 
   const inherits = {
     '& .b': {
@@ -18,6 +19,10 @@ test('inflate', () => {
   }))
   const fn = jest.fn()
   rule2.inflate({ color: 'blue' }, fn)
-  expect(rule2.ruleText).toBe('.a{color:blue}')
+  expect(rule2.ruleText).toBe('.a{color:blue;}')
   expect(fn.mock.calls).toEqual([[inherits]])
+})
+
+test('update', () => {
+  // const 
 })

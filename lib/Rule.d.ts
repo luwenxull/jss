@@ -16,13 +16,15 @@ export interface IJSSRule {
   rules: JSSRuleUnion;
   inflate(data: any, callback?: (style: JSSStyle) => void): void;
   link(rule: CSSStyleRule): void;
+  update(data: any): void;
 }
 export declare class JSSRule implements IJSSRule {
   selectorText: string;
   rules: JSSRuleUnion;
-  private rule;
   ruleText: string;
+  private $rule;
   constructor(selectorText: string, rules: JSSRuleUnion);
   inflate(data: any, callback?: (style: JSSStyle) => void): void;
   link(rule: CSSStyleRule): void;
+  update(data: any): void;
 }

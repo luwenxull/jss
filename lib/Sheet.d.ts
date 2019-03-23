@@ -1,16 +1,14 @@
-import { IJSSRule, JSSStyle } from './Rule';
+import { JSSStyle } from './Rule';
 export interface IJSSSheet {
-  rules: IJSSRule[];
-  update(): void;
-  attach(parent: HTMLElement, data?: any): void;
+  update(data: any): void;
+  attach(parent: HTMLElement): void;
 }
-export declare class Sheet implements IJSSSheet {
-  rules: IJSSRule[];
+export default class Sheet implements IJSSSheet {
+  private rules;
   private classes;
   constructor(style: JSSStyle, data?: any);
-  update(): void;
-  attach(parent: HTMLElement, data?: any): void;
-  private createStyleText;
+  update(data: any): void;
+  attach(parent: HTMLElement): void;
   private linkStyleToRule;
   private translateStyle;
 }

@@ -1,3 +1,5 @@
+import {camelToSnake} from './tool'
+
 export type JSSStyle = {
   [prop: string]: JSSRuleUnion;
 };
@@ -15,13 +17,14 @@ export interface IJSSRule {
   rules: JSSRuleUnion;
   inflate(data: any, callback?: (style: JSSStyle) => void): void;
   link(rule: CSSStyleRule): void;
+  update(data: any): void;
 }
 
 export class JSSRule implements IJSSRule {
-  private rule: CSSStyleRule | null;
   public ruleText: string;
+  private $rule: CSSStyleRule | null;
   constructor(public selectorText: string, public rules: JSSRuleUnion) {
-    this.rule = null;
+    this.$rule = null;
     this.ruleText = '';
   }
 
@@ -42,13 +45,26 @@ export class JSSRule implements IJSSRule {
           callback(toBeTranslated.inherits);
         }
       } else {
-        ruleText += `${key}:${toBeTranslated[key]}`;
+        ruleText += `${camelToSnake(key)}:${toBeTranslated[key]};`;
       }
     });
     this.ruleText = this.selectorText + '{' + ruleText + '}';
   }
 
   public link(rule: CSSStyleRule) {
-    this.rule = rule;
+    this.$rule = rule;
+  }
+
+  public update(data: any) {
+    if (typeof this.rules === 'function' && this.$rule) {
+      const result = this.rules(data)
+      if (result && typeof result === 'object') {
+        Object.keys(result).forEach(key => {
+          if (key !== 'inherits') {
+            ((this.$rule as CSSStyleRule).style as any)[key] = result[key]
+          }
+        })
+      }
+    }
   }
 }
