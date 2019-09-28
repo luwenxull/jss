@@ -3,5 +3,8 @@ export function createSelectorText(text: string, parent: string): string {
 }
 
 export function camelToSnake(str: string) {
-  return str.split(/(?=[A-Z])/).join('-').toLocaleLowerCase()
+  return str
+    .split(/(?=[A-Z])/)
+    .join('-')
+    .toLocaleLowerCase();
 }

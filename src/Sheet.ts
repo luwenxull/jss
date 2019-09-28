@@ -1,53 +1,83 @@
-import { IJSSRule, JSSRule, JSSStyle } from './Rule';
-import { createSelectorText } from './tool';
-export interface IJSSSheet {
-  update(data: any): void;
-  attach(parent: HTMLElement): void;
+import JSSRule, { JSSStyle } from './Rule';
+
+export interface IJSSSheetStyles {
+  [prop: string]: JSSStyle;
 }
-export default class Sheet implements IJSSSheet {
-  private rules: IJSSRule[];
-  private classes: {
-    [prop: string]: string
-  };
-  constructor(style: JSSStyle, data: any = null) {
-    this.rules = [];
-    this.classes = {};
-    this.translateStyle(style, data, '');
+
+export interface IJSSClasses {
+  [prop: string]: string
+}
+
+export class JSSSheet<T> {
+  public rules: JSSRule[] = [];
+  public classes: IJSSClasses= {};
+  // 根据rule.selector做映射
+  private rulesDict: {[prop: string]: JSSRule} = {};
+  private $style?: HTMLStyleElement;
+  constructor(public factory: (data: T) => IJSSSheetStyles) {}
+
+  public inflate(data: T): this {
+    const styles = this.factory(data);
+    Object.keys(styles).forEach(key => {
+      new JSSRule(key, styles[key], {}, this.registerRule.bind(this));
+    });
+    return this
   }
 
-  public update(data:any): void {
+  public update(data: T) {
+
+  }
+
+  public attach() {
+    const style = document.createElement('style')
+    let innerHTML = ''
     this.rules.forEach(rule => {
-      rule.update(data)
+      innerHTML += `${rule.selector}{${rule.ruleText}}`
     })
+    // style.type = 'text/css'
+    style.innerHTML = innerHTML
+    // todo
+    this.$style = style
+    document.getElementsByTagName('head')[0].appendChild(style)
+    this.analyze()
+    return this
   }
 
-  public attach(parent: HTMLElement): void {
-    const innerText = this.rules.reduce((acc, rule) => {
-      return acc + rule.ruleText
-    }, '')
-    let style = document.createElement('style');
-    style.innerText = innerText;
-    parent.appendChild(style);
-    this.linkStyleToRule(style);
+  public remove() {
+    if (this.$style) {
+      document.getElementsByTagName('head')[0].removeChild(this.$style)
+    }
+    return this
   }
 
-  private linkStyleToRule(style: HTMLStyleElement): void {
-    if (style.sheet) {
-      const rules = (style.sheet as CSSStyleSheet).cssRules;
-      for (let i = 0; i < rules.length; i++) {
-        this.rules[i].link(rules[i] as CSSStyleRule);
+  private registerRule(rule: JSSRule) {
+    this.rules.push(rule);
+    this.classes[rule.key] = rule.selfSelector;
+    this.rulesDict[rule.selector] = rule;
+  }
+
+  /**
+   * 构建rule和真实rule的联系
+   *
+   * @private
+   * @memberof JSSSheet
+   */
+  private analyze() {
+    if (this.$style) {
+      const { sheet } = this.$style
+      if (sheet instanceof CSSStyleSheet) {
+        for(let rule of sheet.cssRules) {
+          if (rule instanceof CSSStyleRule) {
+            if (this.rulesDict[rule.selectorText]) {
+              this.rulesDict[rule.selectorText].bindTo(rule)
+            }
+          }
+        }
       }
     }
   }
+}
 
-  private translateStyle(style: JSSStyle, data: any, parentSelector: string):void {
-    Object.keys(style).forEach(key => {
-      const className = createSelectorText(key, parentSelector);
-      const rule = new JSSRule(className, style[key]);
-      this.rules.push(rule);
-      rule.inflate(data, (innerStyle: JSSStyle) => {
-        this.translateStyle(innerStyle, data, rule.selectorText);
-      }); // 规则数据填充
-    });
-  }
+export default function createSheet<T>(factory: (data: T) => IJSSSheetStyles) {
+  return new JSSSheet(factory);
 }

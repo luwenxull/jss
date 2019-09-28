@@ -1,14 +1,28 @@
-import { JSSStyle } from './Rule';
-export interface IJSSSheet {
-  update(data: any): void;
-  attach(parent: HTMLElement): void;
+import JSSRule, { JSSStyle } from './Rule';
+export interface IJSSSheetStyles {
+    [prop: string]: JSSStyle;
 }
-export default class Sheet implements IJSSSheet {
-  private rules;
-  private classes;
-  constructor(style: JSSStyle, data?: any);
-  update(data: any): void;
-  attach(parent: HTMLElement): void;
-  private linkStyleToRule;
-  private translateStyle;
+export interface IJSSClasses {
+    [prop: string]: string;
 }
+export declare class JSSSheet<T> {
+    factory: (data: T) => IJSSSheetStyles;
+    rules: JSSRule[];
+    classes: IJSSClasses;
+    private rulesDict;
+    private $style?;
+    constructor(factory: (data: T) => IJSSSheetStyles);
+    inflate(data: T): this;
+    update(data: T): void;
+    attach(): this;
+    remove(): this;
+    private registerRule;
+    /**
+     * 构建rule和真实rule的联系
+     *
+     * @private
+     * @memberof JSSSheet
+     */
+    private analyze;
+}
+export default function createSheet<T>(factory: (data: T) => IJSSSheetStyles): JSSSheet<T>;

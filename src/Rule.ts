@@ -1,70 +1,74 @@
-import {camelToSnake} from './tool'
-
-export type JSSStyle = {
-  [prop: string]: JSSRuleUnion;
-};
-
-export type JSSRuleDescription = {
-  [prop: string]: number | string | JSSStyle;
-};
-
-export type JSSRuleDescriptionFactory = (data: any) => JSSRuleDescription;
-
-export type JSSRuleUnion = JSSRuleDescription | JSSRuleDescriptionFactory;
-export interface IJSSRule {
-  selectorText: string;
-  ruleText: string;
-  rules: JSSRuleUnion;
-  inflate(data: any, callback?: (style: JSSStyle) => void): void;
-  link(rule: CSSStyleRule): void;
-  update(data: any): void;
+export interface userDefinedOption {
+  concatBy?: string;
 }
 
-export class JSSRule implements IJSSRule {
-  public ruleText: string;
-  private $rule: CSSStyleRule | null;
-  constructor(public selectorText: string, public rules: JSSRuleUnion) {
-    this.$rule = null;
-    this.ruleText = '';
-  }
+type JSSStyleTuple = [JSSStyle, userDefinedOption];
 
-  public inflate(data: any, callback?: (style: JSSStyle) => void): void {
-    let toBeTranslated: JSSRuleDescription,
-      { rules } = this;
-    if (typeof rules === 'function') {
-      toBeTranslated = rules(data);
+type JSSStyleComplex = JSSStyle | JSSStyleTuple;
+
+export type JSSStyle = {
+  [prop: string]: string | number | JSSStyleComplex;
+};
+
+export interface IJSSRuleOption {
+  parent?: JSSRule;
+  concatBy?: string;
+}
+
+export default class JSSRule {
+  public key: string;
+  public selector: string;
+  public selfSelector: string;
+  public style: JSSStyle;
+  public ruleText: string = '';
+  private option: IJSSRuleOption;
+  private $rule?: CSSStyleRule;
+  constructor(
+    key: string,
+    style: JSSStyleComplex, // 构造函数可以传递数组
+    option: IJSSRuleOption,
+    registerRule: (ule: JSSRule) => void
+  ) {
+    let userDefinedOption = {}; // 用户自定义参数
+    if (style instanceof Array) {
+      this.style = style[0];
+      userDefinedOption = style[1];
     } else {
-      toBeTranslated = rules;
+      this.style = style;
     }
-    let ruleText = '';
-    // 处理翻译结果
-    Object.keys(toBeTranslated).forEach(key => {
-      // inherit必须是对象
-      if (key === 'inherits' && typeof toBeTranslated.inherits === 'object') {
-        if (typeof callback === 'function') {
-          callback(toBeTranslated.inherits);
-        }
+    this.option = Object.assign({}, option, userDefinedOption);
+    let { parent, concatBy = ' ' } = this.option;
+    // TODO 防止重复
+    this.selfSelector = key;
+    if (parent instanceof JSSRule) {
+      // 连接parent的选择器
+      this.selector = `${parent.selector}${concatBy}.${this.selfSelector}`;
+      this.key = parent.key + '.' + key;
+    } else {
+      this.selector = '.' + this.selfSelector;
+      this.key = key;
+    }
+    // 注册到sheet
+    registerRule(this);
+    Object.keys(this.style).forEach(key => {
+      const value = this.style[key];
+      if (typeof value === 'string' || typeof value === 'number') {
+        this.ruleText += `${key}:${value};`;
       } else {
-        ruleText += `${camelToSnake(key)}:${toBeTranslated[key]};`;
+        new JSSRule(
+          key,
+          value,
+          {
+            parent: this,
+            concatBy: ' '
+          },
+          registerRule
+        );
       }
     });
-    this.ruleText = this.selectorText + '{' + ruleText + '}';
   }
 
-  public link(rule: CSSStyleRule) {
+  public bindTo(rule: CSSStyleRule) {
     this.$rule = rule;
-  }
-
-  public update(data: any) {
-    if (typeof this.rules === 'function' && this.$rule) {
-      const result = this.rules(data)
-      if (result && typeof result === 'object') {
-        Object.keys(result).forEach(key => {
-          if (key !== 'inherits') {
-            ((this.$rule as CSSStyleRule).style as any)[key] = result[key]
-          }
-        })
-      }
-    }
   }
 }

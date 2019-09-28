@@ -1,30 +1,25 @@
+export interface userDefinedOption {
+    concatBy?: string;
+}
+declare type JSSStyleTuple = [JSSStyle, userDefinedOption];
+declare type JSSStyleComplex = JSSStyle | JSSStyleTuple;
 export declare type JSSStyle = {
-  [prop: string]: JSSRuleUnion;
+    [prop: string]: string | number | JSSStyleComplex;
 };
-export declare type JSSRuleDescription = {
-  [prop: string]: number | string | JSSStyle;
-};
-export declare type JSSRuleDescriptionFactory = (
-  data: any
-) => JSSRuleDescription;
-export declare type JSSRuleUnion =
-  | JSSRuleDescription
-  | JSSRuleDescriptionFactory;
-export interface IJSSRule {
-  selectorText: string;
-  ruleText: string;
-  rules: JSSRuleUnion;
-  inflate(data: any, callback?: (style: JSSStyle) => void): void;
-  link(rule: CSSStyleRule): void;
-  update(data: any): void;
+export interface IJSSRuleOption {
+    parent?: JSSRule;
+    concatBy?: string;
 }
-export declare class JSSRule implements IJSSRule {
-  selectorText: string;
-  rules: JSSRuleUnion;
-  ruleText: string;
-  private $rule;
-  constructor(selectorText: string, rules: JSSRuleUnion);
-  inflate(data: any, callback?: (style: JSSStyle) => void): void;
-  link(rule: CSSStyleRule): void;
-  update(data: any): void;
+export default class JSSRule {
+    key: string;
+    selector: string;
+    selfSelector: string;
+    style: JSSStyle;
+    ruleText: string;
+    private option;
+    private $rule?;
+    constructor(key: string, style: JSSStyleComplex, // 构造函数可以传递数组
+    option: IJSSRuleOption, registerRule: (ule: JSSRule) => void);
+    bindTo(rule: CSSStyleRule): void;
 }
+export {};
