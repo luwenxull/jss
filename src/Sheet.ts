@@ -5,14 +5,14 @@ export interface IJSSSheetStyles {
 }
 
 export interface IJSSClasses {
-  [prop: string]: string
+  [prop: string]: string;
 }
 
 export class JSSSheet<T> {
   public rules: JSSRule[] = [];
-  public classes: IJSSClasses= {};
+  public classes: IJSSClasses = {};
   // 根据rule.selector做映射
-  private rulesDict: {[prop: string]: JSSRule} = {};
+  private rulesDict: { [prop: string]: JSSRule } = {};
   private $style?: HTMLStyleElement;
   constructor(public factory: (data: T) => IJSSSheetStyles) {}
 
@@ -21,33 +21,48 @@ export class JSSSheet<T> {
     Object.keys(styles).forEach(key => {
       new JSSRule(key, styles[key], {}, this.registerRule.bind(this));
     });
-    return this
+    return this;
   }
 
-  public update(data: T) {
-
+  public replace(data: T) {
+    if (this.$style) {
+      this.rules = [];
+      this.classes = {};
+      this.rulesDict = {};
+      const styles = this.factory(data);
+      Object.keys(styles).forEach(key => {
+        new JSSRule(key, styles[key], {}, this.registerRule.bind(this));
+      });
+      this.$style.innerHTML = this.getCssText();
+    } else {
+      throw new Error('call atatch before replace');
+    }
   }
 
   public attach() {
-    const style = document.createElement('style')
-    let innerHTML = ''
-    this.rules.forEach(rule => {
-      innerHTML += `${rule.selector}{${rule.ruleText}}`
-    })
+    const style = document.createElement('style');
     // style.type = 'text/css'
-    style.innerHTML = innerHTML
+    style.innerHTML = this.getCssText();
     // todo
-    this.$style = style
-    document.getElementsByTagName('head')[0].appendChild(style)
-    this.analyze()
-    return this
+    this.$style = style;
+    document.getElementsByTagName('head')[0].appendChild(style);
+    this.analyze();
+    return this;
   }
 
   public remove() {
     if (this.$style) {
-      document.getElementsByTagName('head')[0].removeChild(this.$style)
+      document.getElementsByTagName('head')[0].removeChild(this.$style);
     }
-    return this
+    return this;
+  }
+
+  private getCssText() {
+    let innerHTML = '';
+    this.rules.forEach(rule => {
+      innerHTML += `${rule.selector}{${rule.ruleText}}`;
+    });
+    return innerHTML;
   }
 
   private registerRule(rule: JSSRule) {
@@ -64,12 +79,12 @@ export class JSSSheet<T> {
    */
   private analyze() {
     if (this.$style) {
-      const { sheet } = this.$style
+      const { sheet } = this.$style;
       if (sheet instanceof CSSStyleSheet) {
-        for(let rule of sheet.cssRules) {
+        for (let rule of sheet.cssRules) {
           if (rule instanceof CSSStyleRule) {
             if (this.rulesDict[rule.selectorText]) {
-              this.rulesDict[rule.selectorText].bindTo(rule)
+              this.rulesDict[rule.selectorText].bindTo(rule);
             }
           }
         }

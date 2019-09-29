@@ -13,9 +13,10 @@ export declare class JSSSheet<T> {
     private $style?;
     constructor(factory: (data: T) => IJSSSheetStyles);
     inflate(data: T): this;
-    update(data: T): void;
+    replace(data: T): void;
     attach(): this;
     remove(): this;
+    private getCssText;
     private registerRule;
     /**
      * 构建rule和真实rule的联系
