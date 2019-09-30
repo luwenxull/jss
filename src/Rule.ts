@@ -13,12 +13,14 @@ export type JSSStyle = {
 export interface IJSSRuleOption {
   parent?: JSSRule;
   concatBy?: string;
+  namespace?: string;
 }
 
 export default class JSSRule {
   public key: string;
   public selector: string;
-  public selfSelector: string;
+  // public selfSelector: string;
+  public className: string;
   public style: JSSStyle;
   public ruleText: string = '';
   private option: IJSSRuleOption;
@@ -37,15 +39,16 @@ export default class JSSRule {
       this.style = style;
     }
     this.option = Object.assign({}, option, userDefinedOption);
-    let { parent, concatBy = ' ' } = this.option;
-    // TODO 防止重复
-    this.selfSelector = key;
+    let { parent, concatBy = ' ', namespace = '' } = this.option;
+    // TODO namespace
+    this.className = namespace + key;
+    // this.selfSelector = '.' + this.className;
     if (parent instanceof JSSRule) {
       // 连接parent的选择器
-      this.selector = `${parent.selector}${concatBy}.${this.selfSelector}`;
+      this.selector = `${parent.selector}${concatBy}.${this.className}`;
       this.key = parent.key + '.' + key;
     } else {
-      this.selector = '.' + this.selfSelector;
+      this.selector = '.' + this.className;
       this.key = key;
     }
     // 注册到sheet
@@ -60,7 +63,8 @@ export default class JSSRule {
           value,
           {
             parent: this,
-            concatBy: ' '
+            concatBy: ' ',
+            namespace // namespace默认继承
           },
           registerRule
         );

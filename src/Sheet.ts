@@ -14,12 +14,22 @@ export class JSSSheet<T> {
   // 根据rule.selector做映射
   private rulesDict: { [prop: string]: JSSRule } = {};
   private $style?: HTMLStyleElement;
-  constructor(public factory: (data: T) => IJSSSheetStyles) {}
+  constructor(
+    public factory: (data: T) => IJSSSheetStyles,
+    public namespace: string
+  ) {}
 
   public inflate(data: T): this {
     const styles = this.factory(data);
     Object.keys(styles).forEach(key => {
-      new JSSRule(key, styles[key], {}, this.registerRule.bind(this));
+      new JSSRule(
+        key,
+        styles[key],
+        {
+          namespace: this.namespace
+        },
+        this.registerRule.bind(this)
+      );
     });
     return this;
   }
@@ -31,11 +41,18 @@ export class JSSSheet<T> {
       this.rulesDict = {};
       const styles = this.factory(data);
       Object.keys(styles).forEach(key => {
-        new JSSRule(key, styles[key], {}, this.registerRule.bind(this));
+        new JSSRule(
+          key,
+          styles[key],
+          {
+            namespace: this.namespace
+          },
+          this.registerRule.bind(this)
+        );
       });
       this.$style.innerHTML = this.getCssText();
     } else {
-      throw new Error('call atatch before replace');
+      throw new Error('call attach before replace!');
     }
   }
 
@@ -67,7 +84,7 @@ export class JSSSheet<T> {
 
   private registerRule(rule: JSSRule) {
     this.rules.push(rule);
-    this.classes[rule.key] = rule.selfSelector;
+    this.classes[rule.key] = rule.className;
     this.rulesDict[rule.selector] = rule;
   }
 
@@ -93,6 +110,9 @@ export class JSSSheet<T> {
   }
 }
 
-export default function createSheet<T>(factory: (data: T) => IJSSSheetStyles) {
-  return new JSSSheet(factory);
+export default function createSheet<T>(
+  factory: (data: T) => IJSSSheetStyles,
+  namespace: string = ''
+) {
+  return new JSSSheet(factory, namespace);
 }
