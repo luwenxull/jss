@@ -14,7 +14,6 @@ export interface IJSSRuleOption {
 export default class JSSRule {
   key: string;
   selector: string;
-  selfSelector: string;
   className: string;
   style: JSSStyle;
   ruleText: string;

@@ -1,6 +1,6 @@
 {
   "name": "@luwenxull/jss",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "lib/index.js",
   "repository": "https://github.com/luwenxull/jss.git",
   "author": "luwenxull <992273307@qq.com>",

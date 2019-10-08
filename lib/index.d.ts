@@ -1,2 +1,2 @@
 export { default } from './Sheet';
-export * from './Sheet';
+export { IJSSSheetStyles } from './Sheet';
