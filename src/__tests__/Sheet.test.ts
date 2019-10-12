@@ -92,3 +92,22 @@ test('namespace', () => {
   expect(r3.className).toBe('n2_span')
   expect(r3.selector).toBe('.n1_container>.n2_title .n2_span')
 })
+
+test('on and off', () => {
+  const sheet = createSheet((data: {
+    color: string,
+    titleColor: string
+  }) => {
+    return {
+      container: {
+        color: data.color,
+      }
+    };
+  });
+  const fn = jest.fn();
+  sheet.onChange(fn);
+  expect(sheet['changeListeners'].length).toBe(1)
+  expect(sheet['changeListeners'][0]).toBe(fn)
+  sheet.offChange(fn);
+  expect(sheet['changeListeners'].length).toBe(0)
+})

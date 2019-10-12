@@ -14,6 +14,7 @@ export class JSSSheet<T> {
   // 根据rule.selector做映射
   private rulesDict: { [prop: string]: JSSRule } = {};
   private $style?: HTMLStyleElement;
+  private changeListeners: Array<(classes: IJSSClasses) => void> = [];
   constructor(
     public factory: (data: T) => IJSSSheetStyles,
     public namespace: string
@@ -34,7 +35,7 @@ export class JSSSheet<T> {
     return this;
   }
 
-  public replace(data: T) {
+  public replace(data: T): this {
     if (this.$style) {
       this.rules = [];
       this.classes = {};
@@ -51,12 +52,14 @@ export class JSSSheet<T> {
         );
       });
       this.$style.innerHTML = this.getCssText();
+      this.changeListeners.forEach(fn => fn(this.classes));
     } else {
       throw new Error('call attach before replace!');
     }
+    return this;
   }
 
-  public attach() {
+  public attach(): this {
     const style = document.createElement('style');
     // style.type = 'text/css'
     style.innerHTML = this.getCssText();
@@ -67,10 +70,20 @@ export class JSSSheet<T> {
     return this;
   }
 
-  public remove() {
+  public remove(): this {
     if (this.$style) {
       document.getElementsByTagName('head')[0].removeChild(this.$style);
     }
+    return this;
+  }
+
+  public onChange(fn: (classes: IJSSClasses) => void): this {
+    this.changeListeners.push(fn);
+    return this;
+  }
+
+  public offChange(fn: (classes: IJSSClasses) => void): this {
+    this.changeListeners = this.changeListeners.filter(item => item !== fn);
     return this;
   }
 

@@ -12,11 +12,14 @@ export declare class JSSSheet<T> {
   classes: IJSSClasses;
   private rulesDict;
   private $style?;
+  private changeListeners;
   constructor(factory: (data: T) => IJSSSheetStyles, namespace: string);
   inflate(data: T): this;
-  replace(data: T): void;
+  replace(data: T): this;
   attach(): this;
   remove(): this;
+  onChange(fn: (classes: IJSSClasses) => void): this;
+  offChange(fn: (classes: IJSSClasses) => void): this;
   private getCssText;
   private registerRule;
   /**
